@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced SVG Cursor</title>
+
+<style>
+html, body {
+	margin: 0;
+	height: 100%;
+	overflow: hidden;
+	background: #1f2730;
+	cursor: none;
+	font-family: system-ui, sans-serif;
+}
+
+* {
+	cursor: none !important;
+}
+
+/* Cursor */
+#cursor {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 90px;
+	height: 90px;
+	pointer-events: none;
+	transform: translate(-50%, -50%) scale(1);
+	z-index: 999999;
+	will-change: transform;
+}
+
+/* UI */
+#ui {
+	position: fixed;
+	top: 10px;
+	left: 10px;
+	background: rgba(0,0,0,0.4);
+	padding: 12px;
+	border-radius: 10px;
+	color: white;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+button {
+	padding: 6px 10px;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+}
+
+.row {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+}
+</style>
+</head>
+
+<body>
+
+<!-- UI -->
+<div id="ui">
+	<div class="row">
+		<button id="spinBtn">Toggle Spin</button>
+		<button id="gradBtn">Toggle Gradient</button>
+	</div>
+
+	<div class="row">
+		<label>Color:</label>
+		<input type="color" id="color1" value="#747474">
+	</div>
+
+	<div class="row">
+		<label>Gradient:</label>
+		<input type="color" id="color2" value="#00c6ff">
+	</div>
+
+	<div>Scroll = Resize</div>
+</div>
+
+<!-- Cursor -->
+<div id="cursor">
+<svg viewBox="0 0 900 900" width="100%" height="100%">
+
+	<defs>
+		<linearGradient id="grad">
+			<stop id="stop1" offset="0%" stop-color="#747474"/>
+			<stop id="stop2" offset="100%" stop-color="#00c6ff"/>
+		</linearGradient>
+	</defs>
+
+	<path id="shape" fill="#747474" d="
+	M 365.38 64.741
+	C 284.809 111.297 256.38 213.771 301.287 295.271
+	C 312.564 315.736 318.475 338.735 318.48 362.1
+	C 318.485 385.245 312.675 408.025 301.567 428.33
+	C 277.776 471.816 232.492 499.225 182.937 500.226
+	C 89.902 502.105 15.357 577.984 15.337 671.036
+	C 15.315 765.374 91.813 841.906 186.147 841.846
+	C 245.984 841.813 301.357 810.336 332.377 759.168
+	C 344.492 739.188 361.478 722.585 381.71 710.897
+	C 401.751 699.32 424.383 692.96 447.522 692.428
+	C 497.08 691.288 543.458 716.804 569.102 759.223
+	C 617.248 838.851 720.232 865.463 800.832 818.959
+	C 882.542 771.81 910.562 667.299 863.353 585.619
+	C 833.406 533.815 778.461 501.559 718.633 500.297
+	C 669.067 499.251 623.784 471.819 600.003 428.32
+	C 588.899 408.013 583.065 385.235 583.092 362.09
+	C 583.12 338.735 589.065 315.745 600.285 295.261
+	C 629.031 242.78 628.594 179.091 598.712 127.251
+	C 569.671 76.867 516.932 44.779 458.842 42.035
+	C 426.156 40.491 393.708 48.357 365.375 64.729 Z"/>
+</svg>
+</div>
+
+<script>
+const cursor = document.getElementById("cursor");
+const shape = document.getElementById("shape");
+const grad = document.getElementById("grad");
+const stop1 = document.getElementById("stop1");
+const stop2 = document.getElementById("stop2");
+
+const spinBtn = document.getElementById("spinBtn");
+const gradBtn = document.getElementById("gradBtn");
+const color1 = document.getElementById("color1");
+const color2 = document.getElementById("color2");
+
+let x = window.innerWidth / 2;
+let y = window.innerHeight / 2;
+
+let scale = 1;
+let rotation = 0;
+
+let spinning = false;
+let useGradient = false;
+
+const MIN = 0.2;
+const MAX = 6;
+const STEP = 0.1;
+
+/* Mouse move */
+document.addEventListener("mousemove", e => {
+	x = e.clientX;
+	y = e.clientY;
+}, { passive: true });
+
+/* Scroll scale */
+document.addEventListener("wheel", e => {
+	e.preventDefault();
+	scale += (e.deltaY < 0 ? STEP : -STEP);
+	scale = Math.max(MIN, Math.min(MAX, scale));
+}, { passive: false });
+
+/* Animation loop */
+function animate() {
+	if (spinning) rotation += 2;
+
+	cursor.style.left = x + "px";
+	cursor.style.top = y + "px";
+
+	cursor.style.transform =
+		`translate(-50%, -50%) scale(${scale}) rotate(${rotation}deg)`;
+
+	requestAnimationFrame(animate);
+}
+animate();
+
+/* Spin toggle */
+spinBtn.onclick = () => {
+	spinning = !spinning;
+};
+
+/* Gradient toggle */
+gradBtn.onclick = () => {
+	useGradient = !useGradient;
+
+	if (useGradient) {
+		shape.setAttribute("fill", "url(#grad)");
+	} else {
+		shape.setAttribute("fill", color1.value);
+	}
+};
+
+/* Solid color */
+color1.oninput = (e) => {
+	if (!useGradient) {
+		shape.setAttribute("fill", e.target.value);
+	}
+};
+
+/* Gradient colors */
+color2.oninput = (e) => {
+	stop2.setAttribute("stop-color", e.target.value);
+};
+
+/* Default gradient start */
+stop1.setAttribute("stop-color", color1.value);
+stop2.setAttribute("stop-color", color2.value);
+</script>
+
+</body>
+</html>
